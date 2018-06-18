@@ -66,7 +66,8 @@
 
     - name: Stage CAE    
       unarchive: 
-        src: {{tasks_source}}/dist/cae-0.0.1.{{dev_version}}.tar.gz
+        src: '"{{ tasks_source }}"/dist/cae-0.0.1.{{dev_version}}.tar.gz'
+        src: "dist/cae-0.0.1.{{dev_version}}.tar.gz"
         dest: /home/ubuntu/
         remote_src: yes
 
