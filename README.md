@@ -41,8 +41,9 @@ You can Audit your own runtime configuration by  :
 You can launch the basic CAE GUI :
 
 	docker run --net=cvaas001dev148_default -d -p 5000:5000 --privileged=true -e ELASTICHOST=172.18.0.3:9200  --name cvaas-gui moffzilla/cvaas-gui:dev340 /bin/bash -c "./web/run.sh 172.18.0.6"
-	
-	## Appendix - Tools:
+
+
+## Appendix - Tools:
 
 The following tools (under deploy) are also included for resetting your enviroment
 
