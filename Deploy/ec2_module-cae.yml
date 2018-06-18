@@ -1,0 +1,133 @@
+---
+- name: Create a Docker Compose Host for testing
+  hosts: localhost
+  gather_facts: False
+  vars:
+    key_name: generic-cloud-wk
+    instance_type: m4.large
+#    instance_type: m4.2xlarge
+    security_group: cvaas
+    image: ami-1d4e7a66
+    region: us-east-1
+  tasks:
+    - name: Launch instance
+      ec2:
+         key_name: "{{ key_name }}"
+         group: "{{ security_group }}"
+         instance_type: "{{ instance_type }}"
+         image: "{{ image }}"
+         wait: true
+         region: "{{ region }}"
+#         vpc_subnet_id: subnet-29e63245
+#         assign_public_ip: yes
+      register: ec2
+
+    - name: Add new instance to host group
+      add_host:
+        hostname: "{{ item.public_ip }}"
+        groupname: launched
+      with_items: "{{ ec2.instances }}"
+
+    - name: Wait for SSH to come up
+      wait_for:
+        host: "{{ item.public_dns_name }}"
+        port: 22
+        delay: 60
+        timeout: 320
+        state: started
+      with_items: "{{ ec2.instances }}"
+
+- hosts: launched
+  become: true
+  remote_user: ubuntu
+  gather_facts: false
+  tasks:
+    - name: Install Python
+      raw: sudo apt update && sudo apt install -y python-minimal
+
+- hosts: launched
+  sudo: yes
+  roles:
+    - ADC
+  vars:
+    docker_compose_version: 1.16.1
+
+- hosts: launched
+  become: true
+  remote_user: ubuntu
+  gather_facts: false
+  vars:
+#   dev_version: "dev350"
+    dev_version: "dev148"
+    repo_name: "cvaas-staging"
+#    repo_name: "gitlab-cvaas-staging"
+    cvaas_sanity_test_script: "cvaas_sanity_test_v2.sh"
+    tasks_source: "Moff/OneDrive"
+  tasks:
+    - name: Add Ubuntu user to Docker group
+      user: name=ubuntu groups=docker append=yes
+
+    - name: Stage CVaaS Load    
+      unarchive: 
+        src: /root/{{tasks_source}}/Projects/ATT/CVaaS/git-repo/stage-area/{{repo_name}}/dist/cvaas-0.0.1.{{dev_version}}.tar.gz
+        dest: /home/ubuntu/
+        remote_src: yes
+
+    - name: Build CVaaS image
+      command: docker build -t cvaas /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+
+    - name: Build and run CVaaS Ms
+      command: docker-compose -f /home/ubuntu/cvaas-0.0.1.{{dev_version}}/docker-compose.yaml up -d --build --scale cvaas-worker=1
+
+    - name: Discover ElasticSearch IP [Sanity test]
+      shell: docker inspect elasticsearch | grep 172.18.0 | grep IPAddress | awk -F'"' '{print $4}'
+      register: elasticsearch
+
+#    - debug: var=elasticsearch  
+
+    - name: Discover Redis IP [Sanity test]
+      shell: docker inspect cvaas001{{dev_version}}_redis_1 | grep 172.18.0 | grep IPAddress | awk -F'"' '{print $4}'
+      register: redis
+
+#    - debug: var=redis
+
+    - name: Transfer CVaaS Testing Scripts  
+      copy:
+        src: /root/{{tasks_source}}/Projects/ATT/CVaaS/git-repo/stage-area/cicd/{{cvaas_sanity_test_script}}
+        dest: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - command: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/{{cvaas_sanity_test_script}} {{dev_version}}
+      args:
+        chdir: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+        creates: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/cvaas-0.0.1.{{dev_version}}.log
+    
+    - fetch:
+        src: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/cvaas-0.0.1.{{dev_version}}.log
+        dest: /root/{{tasks_source}}/Projects/ATT/CVaaS/git-repo/stage-area/Logs/
+
+#    - script: "{{tasks_source}}"/Projects/ATT/CVaaS/git-repo/stage-area/cicd/{{cvaas_sanity_test_script}} {{elasticsearch}} {{redis}}
+#      args:
+#        chdir: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+#        creates: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/cvaas-0.0.1.{{dev_version}}.log
+
+
+#    - name: Load CVaaS vMME Template [Sanity test]
+#      shell: /usr/bin/python tools/onap-dump.py -H\{{elasticsearch}} -p\ericsson -d\tools/data/master/vMME_Config_V4_Rev.1.00_07-07-2017.json
+#      register: cvaas_load_result
+#      args:
+#        chdir: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+#    - local_action: copy content={{ cvaas_load_result }} dest=/home/ubuntu/cvaas-0.0.1.{{dev_version}}/cvaas-0.0.1.{{dev_version}}.log
+#    - debug: var=cvaas_load_result  
+
+    
+#    - name: Run CVaaS vMME Audit [Sanity test]
+#      command: /usr/bin/python onap-pipe.py -H {{redis}} -d data/config/vcvaas.config
+#      register: cvaas_audit_result
+#      args:
+#        chdir: /home/ubuntu/cvaas-0.0.1.{{dev_version}}/tools/
+#    - local_action: copy content={{ cvaas_audit_result }} dest=/home/ubuntu/cvaas-0.0.1.{{dev_version}}/cvaas-0.0.1.{{dev_version}}.log
+
+ 
