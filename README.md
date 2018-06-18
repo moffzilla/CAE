@@ -42,5 +42,26 @@ You can launch the basic CAE GUI :
 
 	docker run --net=cvaas001dev148_default -d -p 5000:5000 --privileged=true -e ELASTICHOST=172.18.0.3:9200  --name cvaas-gui moffzilla/cvaas-gui:dev340 /bin/bash -c "./web/run.sh 172.18.0.6"
 	
+	## Appendix - Tools:
+
+The following tools (under deploy) are also included for resetting your enviroment
+
+To terminate any AWS Instance created (it requires you to have installed aws cli)
+  A) To remove all the Machines execute Script
+
+	'./terminate_all_instances.py' 
+
+  B) To remove an specific machine execute Script
+
+	'./list_instances.py'
+
+	'./terminate_instances.py [instance-id]'
+
+  C) Manually by AWS CLI
+
+       'aws ec2 describe-instances | grep InstanceId'
+
+       'aws ec2 terminate-instances --instance-ids [i-id]'
+	
 	
 	
