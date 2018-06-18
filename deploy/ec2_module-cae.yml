@@ -66,14 +66,14 @@
 
     - name: Stage CAE    
       unarchive: 
-        src: '"{{ tasks_source }}"/dist/cae-0.0.1.{{dev_version}}.tar.gz'
+#        src: '"{{ tasks_source }}"/dist/cae-0.0.1.{{dev_version}}.tar.gz'
         src: "dist/cae-0.0.1.{{dev_version}}.tar.gz"
         dest: /home/ubuntu/
         remote_src: yes
 
     - name: Build CVaaS image
-      command: docker build -t cvaas /home/ubuntu/cae-0.0.1.{{dev_version}}/
+      command: docker build -t cvaas /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
 
     - name: Build and run CVaaS Ms
-      command: docker-compose -f /home/ubuntu/cae-0.0.1.{{dev_version}}/docker-compose.yaml up -d --build --scale cvaas-worker=1
+      command: docker-compose -f /home/ubuntu/cvaas-0.0.1.{{dev_version}}/docker-compose.yaml up -d --build --scale cvaas-worker=1
 
