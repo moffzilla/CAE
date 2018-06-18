@@ -58,22 +58,21 @@
   gather_facts: false
   vars:
     dev_version: "dev148"
-    repo_name: "cvaas-staging"
-    cvaas_sanity_test_script: "cvaas_sanity_test_v2.sh"
-    tasks_source: "Moff/OneDrive"
+    tasks_source: "/root/Moff/OneDrive/Projects/Internal/CAE/deploy"
+ #   tasks_source: "$PWD"
   tasks:
     - name: Add Ubuntu user to Docker group
       user: name=ubuntu groups=docker append=yes
 
-    - name: Stage CVaaS Load    
+    - name: Stage CAE    
       unarchive: 
-        src: /root/{{tasks_source}}/Projects/ATT/CVaaS/git-repo/stage-area/{{repo_name}}/dist/cvaas-0.0.1.{{dev_version}}.tar.gz
+        src: {{tasks_source}}/dist/cae-0.0.1.{{dev_version}}.tar.gz
         dest: /home/ubuntu/
         remote_src: yes
 
     - name: Build CVaaS image
-      command: docker build -t cvaas /home/ubuntu/cvaas-0.0.1.{{dev_version}}/
+      command: docker build -t cvaas /home/ubuntu/cae-0.0.1.{{dev_version}}/
 
     - name: Build and run CVaaS Ms
-      command: docker-compose -f /home/ubuntu/cvaas-0.0.1.{{dev_version}}/docker-compose.yaml up -d --build --scale cvaas-worker=1
+      command: docker-compose -f /home/ubuntu/cae-0.0.1.{{dev_version}}/docker-compose.yaml up -d --build --scale cvaas-worker=1
 

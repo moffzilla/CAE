@@ -1,10 +1,10 @@
 #!/bin/sh
-#title           :cvaas_Sanity_test.sh
+#title           :cae_Sanity_test.sh
 #description     :This program discover ElasticSearh and Redis IP then use them for test CVaaS
 #author          :
 #date            :
 #version         :0.1
-#usage           :./cvaas_sanity_test_v2.sh dev142
+#usage           :./cae_sanity_test_v2.sh dev142
 #notes           : dev142 referes to the latest CVaaS Load, this script can be combined with Ansible 
 #python_version  :2.7.6  
 #=======================================================================
